@@ -1,1 +1,21 @@
 # Results
+```{r}
+library(tidyverse)
+
+library(dplyr)
+
+sector_norm <- sector %>%
+  group_by(Sector) %>%
+  arrange(Date) %>%
+  mutate(
+    base_price = first(`Adj Close`),
+    rebased = (`Adj Close` / base_price) * 100
+  )
+
+ggplot(sector_norm, aes(Date, rebased, color = Sector)) +
+  geom_line() +
+  labs(title = "Rebased Price Index (Start = 100)",
+       y = "Index Level") +
+  theme_minimal()
+
+```
