@@ -2,20 +2,29 @@
 ```{r}
 library(tidyverse)
 
-library(dplyr)
+# 1. Read the CSV cleanly
+sector <- readr::read_csv("sector_etfs_clean.csv", show_col_types = FALSE) |>
+  mutate(Date = as.Date(Date))   # make sure Date is a Date
 
-sector_norm <- sector %>%
-  group_by(Sector) %>%
-  arrange(Date) %>%
+# 2. Rebase prices (start = 100 for each sector)
+sector_norm <- sector |>
+  group_by(Sector) |>
+  arrange(Date, .by_group = TRUE) |>
   mutate(
     base_price = first(`Adj Close`),
-    rebased = (`Adj Close` / base_price) * 100
-  )
+    rebased = `Adj Close` / base_price * 100
+  ) |>
+  ungroup()
 
-ggplot(sector_norm, aes(Date, rebased, color = Sector)) +
+# 3. Plot
+ggplot(sector_norm, aes(x = Date, y = rebased, color = Sector)) +
   geom_line() +
-  labs(title = "Rebased Price Index (Start = 100)",
-       y = "Index Level") +
+  labs(
+    title = "Rebased Price Index (Start = 100)",
+    y = "Index Level",
+    x = "Date"
+  ) +
   theme_minimal()
 
 ```
+

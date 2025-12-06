@@ -1,0 +1,42 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Stocks",
+    "section": "",
+    "text": "1 Introduction",
+    "crumbs": [
+      "<span class='chapter-number'>1</span>  <span class='chapter-title'>Introduction</span>"
+    ]
+  },
+  {
+    "objectID": "data.html",
+    "href": "data.html",
+    "title": "2  Data",
+    "section": "",
+    "text": "2.1 Description\nCode\nsector= read.csv(\"sector_etfs_clean.csv\")\nhead(sector)\n\n\n    Open   High    Low  Close Adj.Close   Volume Ticker       Date     Sector\n1 30.355 31.195 30.315 31.010  29.11239 30885800    XLK 2019-01-02 Technology\n2 30.220 30.240 29.405 29.445  27.64316 49893400    XLK 2019-01-03 Technology\n3 29.985 30.880 29.890 30.750  28.86830 41535600    XLK 2019-01-04 Technology\n4 30.750 31.235 30.680 31.025  29.12647 23817200    XLK 2019-01-07 Technology\n5 31.325 31.435 30.915 31.285  29.37056 26005200    XLK 2019-01-08 Technology\n6 31.455 31.855 31.420 31.690  29.75078 28044800    XLK 2019-01-09 Technology\n        return vol_21d rolling_max     drawdown\n1           NA      NA    29.11239  0.000000000\n2 -0.050467478      NA    29.11239 -0.050467478\n3  0.044319883      NA    29.11239 -0.008384308\n4  0.008943065      NA    29.12647  0.000000000\n5  0.008380450      NA    29.37056  0.000000000\n6  0.012945434      NA    29.75078  0.000000000",
+    "crumbs": [
+      "<span class='chapter-number'>2</span>  <span class='chapter-title'>Data</span>"
+    ]
+  },
+  {
+    "objectID": "data.html#missing-value-analysis",
+    "href": "data.html#missing-value-analysis",
+    "title": "2  Data",
+    "section": "2.2 Missing value analysis",
+    "text": "2.2 Missing value analysis",
+    "crumbs": [
+      "<span class='chapter-number'>2</span>  <span class='chapter-title'>Data</span>"
+    ]
+  },
+  {
+    "objectID": "results.html",
+    "href": "results.html",
+    "title": "3  Results",
+    "section": "",
+    "text": "Code\nlibrary(tidyverse)\n\n# 1. Read the CSV cleanly\nsector &lt;- readr::read_csv(\"sector_etfs_clean.csv\", show_col_types = FALSE) |&gt;\n  mutate(Date = as.Date(Date))   # make sure Date is a Date\n\n# 2. Rebase prices (start = 100 for each sector)\nsector_norm &lt;- sector |&gt;\n  group_by(Sector) |&gt;\n  arrange(Date, .by_group = TRUE) |&gt;\n  mutate(\n    base_price = first(`Adj Close`),\n    rebased = `Adj Close` / base_price * 100\n  ) |&gt;\n  ungroup()\n\n# 3. Plot\nggplot(sector_norm, aes(x = Date, y = rebased, color = Sector)) +\n  geom_line() +\n  labs(\n    title = \"Rebased Price Index (Start = 100)\",\n    y = \"Index Level\",\n    x = \"Date\"\n  ) +\n  theme_minimal()",
+    "crumbs": [
+      "<span class='chapter-number'>3</span>  <span class='chapter-title'>Results</span>"
+    ]
+  }
+]

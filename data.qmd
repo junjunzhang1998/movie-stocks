@@ -55,14 +55,12 @@ df["drawdown"] = df["Adj Close"] / df["rolling_max"] - 1
 # 5. Save
 df.to_csv("sector_etfs_clean.csv", index=False)
 ```
-```{r}
-sector= read.csv("sector_etfs_clean.csv")
-head(sector)
-```
+
 
 ## Description
 ```{r}
-
+sector= read.csv("sector_etfs_clean.csv")
+head(sector)
 ```
 
 ## Missing value analysis
