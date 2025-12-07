@@ -1,9 +1,25 @@
-# Results
+# Loading the datasets 
 ```{r}
+#load the three datasets and tidyverse package
 library(tidyverse)
 
-media <- read_csv("movie_media_clean.csv", show_col_types = FALSE)
+# --- Load & clean Media data ---
+media <- read_csv("data/movie_media_clean.csv", show_col_types = FALSE) |>
+  mutate(Date = as.Date(Date))
 
+# --- Load & clean Sector ETFs ---
+sectors <- read_csv("data/sector_etfs_clean.csv", show_col_types = FALSE) |>
+  mutate(Date = as.Date(Date))
+
+# --- Load Box Office Data ---
+box_office <- read_csv("data/box_office.csv", show_col_types = FALSE)
+# use mutate(Date = ...) here only if box_office contains a date column
+
+```
+
+
+# Results
+```{r}
 media_rebased <- media |>
   group_by(Ticker) |>
   arrange(Date, .by_group = TRUE) |>
@@ -23,7 +39,6 @@ ggplot(media_rebased, aes(Date, rebased, color = Ticker)) +
     x = "Date"
   ) +
   theme_minimal()
-
 ```
 ```{r}
 media_rebased <- media |>
@@ -53,11 +68,6 @@ print(p2)
 
 
 ```{r}
-library(tidyverse)
-
-media <- read_csv("movie_media_clean.csv", show_col_types = FALSE) |>
-  mutate(Date = as.Date(Date))
-
 # -------------------------
 # Rebase individual stocks
 # -------------------------
@@ -123,12 +133,6 @@ ggplot(cor_long, aes(Var1, Var2, fill = Correlation)) +
 
 ```
 ```{r}
-library(tidyverse)
-
-media <- read_csv("movie_media_clean.csv", show_col_types = FALSE)
-sectors <- read_csv("sector_etfs_clean.csv", show_col_types = FALSE)
-
-
 # Rebase each media company to 1
 media_rebased <- media |>
   group_by(Ticker) |>
@@ -197,11 +201,6 @@ ggplot(combined2, aes(Date, rebased, color = Sector, group = Sector)) +
 
 ```
 ```{r}
-library(tidyverse)
-
-media <- read_csv("movie_media_clean.csv", show_col_types = FALSE) |>
-  mutate(Date = as.Date(Date))
-
 # 1) Equal-weight subindustry index (rebased)
 sub_index <- media |>
   filter(!is.na(Adj_Close)) |>
@@ -321,10 +320,6 @@ ggplot(relative_long, aes(Date, rebased, color = Series)) +
 ```
 
 ```{r}
-library(tidyverse)
-
-box_office <- read_csv("box_office.csv", show_col_types = FALSE)
-
 p_box1 <- ggplot(box_office, aes(Year, Domestic_BoxOffice)) +
   geom_line(linewidth = 1) +
   geom_point(size = 2) +
@@ -353,13 +348,6 @@ p_box2 <- ggplot(box_office, aes(Year, Releases)) +
 p_box2
 ```
 ```{r}
-
-library(tidyverse)
-
-# --- Load data ---
-media <- read_csv("movie_media_clean.csv", show_col_types = FALSE) |>
-  mutate(Date = as.Date(Date))
-
 # --- Equal-weight subindustry returns (wide) ---
 sub_returns <- media |>
   filter(!is.na(return)) |>
@@ -407,12 +395,7 @@ ggplot(loadings_plot, aes(PC1, PC2)) +
 
 ```
 ```{r}
-library(tidyverse)
 library(ggridges)
-
-# 1. Load your media data ----
-media <- read_csv("movie_media_clean.csv", show_col_types = FALSE) |>
-  mutate(Date = as.Date(Date))
 
 # 2. Build subindustry daily returns (this defines sub_daily) ----
 sub_daily <- media |>
