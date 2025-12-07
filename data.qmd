@@ -8,6 +8,134 @@ library(reticulate)
 import yfinance as yf
 import pandas as pd
 
+# ---------------------------------------------------
+# 1. Date Range
+# ---------------------------------------------------
+start = "2019-01-01"
+end   = "2025-11-30"
+
+# ---------------------------------------------------
+# 2. Tickers to Download
+# ---------------------------------------------------
+tickers = [
+    # Theaters
+    "AMC", "CNK", "IMAX",
+    
+    # Legacy Studios / Media
+    "DIS", "CMCSA", "PSKY", "WBD", "FOXA",
+    
+    # Diversified (not movie-driven)
+    "SONY",
+    
+    # Streaming
+    "NFLX", "ROKU",
+    
+    # Benchmark
+    "^GSPC"
+]
+
+# ---------------------------------------------------
+# 3. Sub-Industry Classification
+# ---------------------------------------------------
+subindustry_map = {
+    # Theater Chains
+    "AMC":  "Theater",
+    "CNK":  "Theater",
+    "IMAX": "Theater",
+
+    # Legacy Studios / Media
+    "DIS":   "Studio",
+    "CMCSA": "Studio",
+    "PSKY":  "Studio",
+    "WBD":   "Studio",
+    "FOXA":  "Studio",
+
+    # Diversified (Gaming/Electronics/Music/Media)
+    "SONY": "Diversified",
+
+    # Streaming Pure-Plays
+    "NFLX": "Streamer",
+    "ROKU": "Streamer",
+
+    # Benchmark
+    "^GSPC": "Benchmark"
+}
+
+# ---------------------------------------------------
+# 4. Download from Yahoo Finance
+# ---------------------------------------------------
+raw = yf.download(
+    tickers=tickers,
+    start=start,
+    end=end,
+    group_by="ticker",
+    auto_adjust=False,
+    progress=False
+)
+
+# ---------------------------------------------------
+# 5. Convert to Tidy Long Format
+# ---------------------------------------------------
+frames = []
+for t in tickers:
+    tmp = raw[t].copy()
+    tmp["Ticker"] = t
+    tmp["Date"] = tmp.index
+    frames.append(tmp)
+
+df = pd.concat(frames, ignore_index=True)
+
+# Standardize column names
+df = df.rename(columns={
+    "Adj Close": "Adj_Close",
+    "Open": "Open",
+    "High": "High",
+    "Low": "Low",
+    "Close": "Close",
+    "Volume": "Volume"
+})
+
+# ---------------------------------------------------
+# 6. Compute Metrics (returns, vol, drawdown)
+# ---------------------------------------------------
+df = df.sort_values(["Ticker", "Date"])
+df["SubIndustry"] = df["Ticker"].map(subindustry_map)
+
+# Daily returns
+df["return"] = (
+    df.groupby("Ticker")["Adj_Close"]
+      .pct_change()
+)
+
+# Rolling 21-day volatility
+df["vol_21d"] = (
+    df.groupby("Ticker")["return"]
+      .rolling(21)
+      .std()
+      .reset_index(level=0, drop=True)
+)
+
+# Rolling max and drawdown
+df["rolling_max"] = (
+    df.groupby("Ticker")["Adj_Close"].cummax()
+)
+df["drawdown"] = df["Adj_Close"] / df["rolling_max"] - 1
+
+# ---------------------------------------------------
+# 7. Save Final CSV
+# ---------------------------------------------------
+df.to_csv("movie_media_clean.csv", index=False)
+```
+
+```{r}
+media= read.csv("movie_media_clean.csv")
+head(media)
+```
+
+```{python}
+import yfinance as yf
+import pandas as pd
+
 # 1. Tickers + sector names
 sector_etfs = ["XLK", "XLE", "XLF", "XLV", "XLP", "XLI", "^GSPC"]
 sector_map = {
@@ -56,11 +184,67 @@ df["drawdown"] = df["Adj Close"] / df["rolling_max"] - 1
 df.to_csv("sector_etfs_clean.csv", index=False)
 ```
 
+```{python}
+import pandas as pd
 
-## Description
-```{r}
-sector= read.csv("sector_etfs_clean.csv")
-head(sector)
+url = "https://www.boxofficemojo.com/year/?ref_=bo_nb_di_secondarytab"
+
+# Scrape all tables from the page
+tables = pd.read_html(url)
+
+# The first table is the summary table (Year | Total Gross | %± LY | Releases | etc.)
+df = tables[0].copy()
+
+# Clean column names based on actual page structure
+df = df.rename(columns={
+    df.columns[0]: "Year",
+    df.columns[1]: "Domestic_BoxOffice",
+    df.columns[2]: "Pct_vs_LY",
+    df.columns[3]: "Releases",
+    df.columns[4]: "Average_Gross",
+    df.columns[5]: "Top_Release"
+})
+
+# Keep only the needed columns
+df = df[["Year", "Domestic_BoxOffice", "Releases"]].copy()
+
+# Remove non-year rows
+df = df[df["Year"].astype(str).str.isnumeric()].copy()
+
+# Convert Year to int
+df["Year"] = df["Year"].astype(int)
+
+# Clean the Domestic_BoxOffice column: remove $, commas
+df["Domestic_BoxOffice"] = (
+    df["Domestic_BoxOffice"]
+      .astype(str)
+      .str.replace(r"[\$,]", "", regex=True)
+      .replace("", "0")
+      .astype(float)
+)
+
+# Clean Releases (remove commas, convert to int)
+df["Releases"] = (
+    df["Releases"]
+      .astype(str)
+      .str.replace(",", "", regex=True)
+      .replace("", "0")
+      .astype(int)
+)
+
+# Optional: restrict years (e.g., 2000–2025)
+df = df[df["Year"] >= 2000].copy()
+
+# Save to CSV
+df.to_csv("box_office.csv", index=False)
+
+print("Saved box_office.csv with columns:", df.columns.tolist())
+print(df.tail())
+
+
 ```
+## Description
+
 
 ## Missing value analysis
+

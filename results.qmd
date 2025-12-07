@@ -2,29 +2,442 @@
 ```{r}
 library(tidyverse)
 
-# 1. Read the CSV cleanly
-sector <- readr::read_csv("sector_etfs_clean.csv", show_col_types = FALSE) |>
-  mutate(Date = as.Date(Date))   # make sure Date is a Date
+media <- read_csv("movie_media_clean.csv", show_col_types = FALSE)
 
-# 2. Rebase prices (start = 100 for each sector)
-sector_norm <- sector |>
-  group_by(Sector) |>
+media_rebased <- media |>
+  group_by(Ticker) |>
   arrange(Date, .by_group = TRUE) |>
   mutate(
-    base_price = first(`Adj Close`),
-    rebased = `Adj Close` / base_price * 100
+    base = first(Adj_Close),
+    rebased = Adj_Close / base
   ) |>
   ungroup()
 
-# 3. Plot
-ggplot(sector_norm, aes(x = Date, y = rebased, color = Sector)) +
-  geom_line() +
+ggplot(media_rebased, aes(Date, rebased, color = Ticker)) +
+  geom_line(alpha = 0.85) +
+  scale_y_log10() +
   labs(
-    title = "Rebased Price Index (Start = 100)",
-    y = "Index Level",
+    title = "Long-Term Performance of Movie/Media Companies vs S&P 500",
+    subtitle = "Rebased to 1 at first date; log scale highlights relative divergence",
+    y = "Rebased Price (log scale)",
     x = "Date"
   ) +
   theme_minimal()
+
+```
+```{r}
+media_rebased <- media |>
+  filter(!is.na(Adj_Close)) |>
+  group_by(Ticker, SubIndustry) |>
+  arrange(Date, .by_group = TRUE) |>
+  mutate(
+    base    = first(Adj_Close),
+    rebased = Adj_Close / base
+  ) |>
+  ungroup()
+
+p2 <- ggplot(media_rebased, aes(Date, rebased, color = Ticker)) +
+  geom_line(alpha = 0.85) +
+  facet_wrap(~ SubIndustry, scales = "free_y") +
+  scale_y_log10() +
+  labs(
+    title = "Sub-Industry Performance: Theaters vs Studios vs Streamers vs Diversified vs Benchmark",
+    subtitle = "Each ticker rebased to 1 at its first non-missing price (log scale)",
+    y = "Rebased Price",
+    x = "Date"
+  ) +
+  theme_minimal()
+
+print(p2)
+```
+
+
+```{r}
+library(tidyverse)
+
+media <- read_csv("movie_media_clean.csv", show_col_types = FALSE) |>
+  mutate(Date = as.Date(Date))
+
+# -------------------------
+# Rebase individual stocks
+# -------------------------
+media_rebased <- media |>
+  filter(!is.na(Adj_Close)) |>
+  group_by(Ticker) |>
+  arrange(Date, .by_group = TRUE) |>
+  mutate(
+    base = first(Adj_Close),
+    rebased = Adj_Close / base
+  ) |> 
+  ungroup()
+
+# -------------------------
+# Equal-weight subindustry index
+# -------------------------
+subindustry_index <- media_rebased |>
+  group_by(Date, SubIndustry) |>
+  summarize(SubIndex = mean(rebased, na.rm = TRUE), .groups = "drop")
+
+# -------------------------
+# Wide matrix
+# -------------------------
+sub_wide <- subindustry_index |>
+  pivot_wider(names_from = SubIndustry, values_from = SubIndex)
+
+# -------------------------
+# Desired order
+# -------------------------
+order_vec <- c("Benchmark", "Streamer", "Diversified", "Studio", "Theater")
+
+# -------------------------
+# Correlation matrix with reordered columns
+# -------------------------
+cor_mat <- sub_wide |>
+  select(all_of(order_vec)) |>
+  cor(use = "pairwise.complete.obs")
+
+# -------------------------
+# Tidy long format
+# -------------------------
+cor_long <- cor_mat |>
+  as.data.frame() |>
+  rownames_to_column("Var1") |>
+  pivot_longer(cols = order_vec, names_to = "Var2", values_to = "Correlation")
+
+# -------------------------
+# Plot heatmap
+# -------------------------
+ggplot(cor_long, aes(Var1, Var2, fill = Correlation)) +
+  geom_tile(color = "white", linewidth = 0.3) +
+  scale_fill_viridis_c(option = "C", limits = c(-1, 1)) +
+  labs(
+    title = "Correlation Between Movie/Media Sub-Industries (2015–2025)",
+    subtitle = "Clearer block structure after business-driven ordering",
+    x = "", y = "", fill = "Correlation"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    panel.grid = element_blank()
+  )
+
+```
+```{r}
+library(tidyverse)
+
+media <- read_csv("movie_media_clean.csv", show_col_types = FALSE)
+sectors <- read_csv("sector_etfs_clean.csv", show_col_types = FALSE)
+
+
+# Rebase each media company to 1
+media_rebased <- media |>
+  group_by(Ticker) |>
+  arrange(Date, .by_group = TRUE) |>
+  mutate(base = first(Adj_Close),
+         rebased = Adj_Close / base) |>
+  ungroup()
+
+# Compute equal-weight average index
+movie_index <- media_rebased |>
+  group_by(Date) |>
+  summarize(
+    Movie_Index = mean(rebased, na.rm = TRUE)
+  )
+
+
+sectors_rebased <- sectors |>
+  group_by(Ticker, Sector) |>
+  arrange(Date, .by_group = TRUE) |>
+  mutate(
+    base = first(`Adj Close`),
+    rebased = `Adj Close` / base
+  ) |>
+  ungroup()
+
+
+# Sector ETF index
+sector_index <- sectors_rebased |>
+  select(Date, Sector, rebased)
+
+# Movie Index needs a pseudo "Sector" label
+movie_index2 <- movie_index |>
+  mutate(Sector = "Movie Industry")
+
+combined <- bind_rows(
+  sector_index,
+  movie_index2 |> mutate(rebased = Movie_Index)
+)
+
+```
+
+```{r}
+combined2 <- combined |>
+  mutate(
+    is_movie = (Sector == "Movie Industry")
+  )
+
+ggplot(combined2, aes(Date, rebased, color = Sector, group = Sector)) +
+  geom_line(aes(linewidth = is_movie, alpha = is_movie)) +
+  scale_y_log10() +
+  scale_linewidth_manual(values = c("FALSE" = 0.6, "TRUE" = 2.0)) +
+  scale_alpha_manual(values = c("FALSE" = 0.8, "TRUE" = 1.0)) +
+  labs(
+    title = "Movie Industry vs Major Sector ETFs (Rebased to 1)",
+    subtitle = "Movie Industry highlighted for comparison",
+    y = "Rebased Price (log scale)",
+    x = "Date",
+    color = "Sector / Industry",
+    linewidth = NULL,
+    alpha = NULL
+  ) +
+  theme_minimal() +
+  theme(legend.position = "right")
+
+
+
+```
+```{r}
+library(tidyverse)
+
+media <- read_csv("movie_media_clean.csv", show_col_types = FALSE) |>
+  mutate(Date = as.Date(Date))
+
+# 1) Equal-weight subindustry index (rebased)
+sub_index <- media |>
+  filter(!is.na(Adj_Close)) |>
+  group_by(Ticker) |>
+  arrange(Date, .by_group = TRUE) |>
+  mutate(
+    base = first(Adj_Close),
+    rebased = Adj_Close / base
+  ) |>
+  ungroup() |>
+  group_by(Date, SubIndustry) |>
+  summarize(
+    SubIndex = mean(rebased, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# 2) Drawdown per subindustry
+sub_dd <- sub_index |>
+  group_by(SubIndustry) |>
+  arrange(Date, .by_group = TRUE) |>
+  mutate(
+    roll_max = cummax(SubIndex),
+    drawdown = SubIndex / roll_max - 1
+  ) |>
+  ungroup()
+
+ggplot(sub_dd, aes(Date, drawdown, color = SubIndustry)) +
+  geom_hline(yintercept = 0, linetype = "dashed", linewidth = 0.4) +
+  geom_line(linewidth = 1) +
+  scale_y_continuous(labels = scales::percent) +
+  labs(
+    title = "Sub-Industry Drawdowns from Prior Peak",
+    subtitle = "Theaters suffer persistent deep drawdowns; streamers and diversified recover more",
+    x = "Date",
+    y = "Drawdown from previous peak"
+  ) +
+  theme_minimal()
+
+```
+```{r}
+time_underwater <- sub_dd |>
+  mutate(underwater = drawdown < 0) |>
+  group_by(SubIndustry) |>
+  summarize(
+    pct_underwater = mean(underwater, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+ggplot(time_underwater, aes(fct_reorder(SubIndustry, pct_underwater), pct_underwater)) +
+  geom_col() +
+  coord_flip() +
+  scale_y_continuous(labels = scales::percent) +
+  labs(
+    title = "Percent of Days Spent Below Previous Peak",
+    subtitle = "Structural damage is largest in Theaters; Benchmark and Diversified fare best",
+    x = "",
+    y = "% of trading days underwater"
+  ) +
+  theme_minimal()
+
+```
+```{r}
+# 1) Movie industry equal-weight price index (use Adj_Close, not rebased)
+movie_index <- media |>
+  filter(SubIndustry != "Benchmark") |>
+  group_by(Date) |>
+  summarize(
+    movie_price = mean(Adj_Close, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# 2) S&P 500
+sp <- media |>
+  filter(Ticker == "^GSPC") |>
+  select(Date, sp_price = Adj_Close)
+
+# 3) Netflix
+nflx <- media |>
+  filter(Ticker == "NFLX") |>
+  select(Date, nflx_price = Adj_Close)
+
+# 4) Align dates and rebase all three to 1 at common start
+all3 <- movie_index |>
+  inner_join(sp, by = "Date") |>
+  inner_join(nflx, by = "Date") |>
+  arrange(Date)
+
+base_movie <- first(all3$movie_price)
+base_sp    <- first(all3$sp_price)
+base_nflx  <- first(all3$nflx_price)
+
+relative_long <- all3 |>
+  mutate(
+    `Movie Industry` = movie_price / base_movie,
+    `S&P 500`        = sp_price    / base_sp,
+    `Netflix`        = nflx_price  / base_nflx
+  ) |>
+  select(Date, `Movie Industry`, `S&P 500`, `Netflix`) |>
+  pivot_longer(
+    cols = -Date,
+    names_to = "Series",
+    values_to = "rebased"
+  )
+
+ggplot(relative_long, aes(Date, rebased, color = Series)) +
+  geom_line(linewidth = 1) +
+  scale_y_log10() +
+  labs(
+    title = "Netflix vs Movie Industry vs S&P 500 (Rebased)",
+    subtitle = "Netflix tracks the broad market more closely than the struggling movie industry",
+    x = "Date",
+    y = "Rebased Price (log scale)",
+    color = ""
+  ) +
+  theme_minimal()
+
+```
+
+```{r}
+library(tidyverse)
+
+box_office <- read_csv("box_office.csv", show_col_types = FALSE)
+
+p_box1 <- ggplot(box_office, aes(Year, Domestic_BoxOffice)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  scale_y_continuous(labels = scales::dollar) +
+  labs(
+    title = "U.S. Theatrical Box Office Revenue by Year",
+    subtitle = "Pre-COVID peak, COVID collapse, and incomplete recovery",
+    x = "Year",
+    y = "Total Domestic Box Office"
+  ) +
+  theme_minimal()
+
+p_box1
+```
+```{r}
+p_box2 <- ggplot(box_office, aes(Year, Releases)) +
+  geom_col(fill = "#4C72B0") +
+  labs(
+    title = "Number of Theatrical Releases per Year",
+    subtitle = "Industry output collapsed during COVID and remains structurally lower",
+    x = "Year",
+    y = "Number of releases"
+  ) +
+  theme_minimal()
+
+p_box2
+```
+```{r}
+
+library(tidyverse)
+
+# --- Load data ---
+media <- read_csv("movie_media_clean.csv", show_col_types = FALSE) |>
+  mutate(Date = as.Date(Date))
+
+# --- Equal-weight subindustry returns (wide) ---
+sub_returns <- media |>
+  filter(!is.na(return)) |>
+  group_by(Date, SubIndustry) |>
+  summarize(sub_ret = mean(return, na.rm = TRUE), .groups = "drop") |>
+  pivot_wider(names_from = SubIndustry, values_from = sub_ret) |>
+  drop_na()
+
+# --- PCA matrix ---
+X <- sub_returns |>
+  select(-Date) |>
+  as.matrix()
+
+# --- PCA ---
+pca <- prcomp(X, scale. = TRUE)
+
+# --- Loadings (important part) ---
+loadings <- as.data.frame(pca$rotation) |>
+  rownames_to_column("SubIndustry")
+
+# scale arrows for plotting aesthetics
+arrow_scale <- 6
+loadings_plot <- loadings |>
+  mutate(
+    PC1 = PC1 * arrow_scale,
+    PC2 = PC2 * arrow_scale
+  )
+
+# --- Clean biplot with arrows only ---
+ggplot(loadings_plot, aes(PC1, PC2)) +
+  geom_segment(aes(x = 0, y = 0, xend = PC1, yend = PC2),
+               arrow = arrow(length = unit(0.25, "cm")),
+               linewidth = 1,
+               color = "red") +
+  geom_text(aes(label = SubIndustry),
+            vjust = -0.5, hjust = 0.5, size = 5, fontface = "bold") +
+  labs(
+    title = "PCA of Movie/Media Subindustry Daily Returns",
+    subtitle = "Arrows show subindustry loadings on PC1 and PC2",
+    x = paste0("PC1 (", round(summary(pca)$importance[2,1]*100,1), "% variance)"),
+    y = paste0("PC2 (", round(summary(pca)$importance[2,2]*100,1), "% variance)")
+  ) +
+  theme_minimal(base_size = 14)
+
+
+```
+```{r}
+library(tidyverse)
+library(ggridges)
+
+# 1. Load your media data ----
+media <- read_csv("movie_media_clean.csv", show_col_types = FALSE) |>
+  mutate(Date = as.Date(Date))
+
+# 2. Build subindustry daily returns (this defines sub_daily) ----
+sub_daily <- media |>
+  filter(!is.na(return)) |>
+  group_by(Date, SubIndustry) |>
+  summarize(
+    sub_ret = mean(return, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# 3. Ridgeline plot, zoomed around typical moves (e.g. -8% to +8%) ----
+ggplot(sub_daily, aes(x = sub_ret, y = SubIndustry, fill = SubIndustry)) +
+  geom_density_ridges(alpha = 0.8, scale = 4) +
+  scale_x_continuous(
+    labels = scales::percent,
+    limits = c(-0.08, 0.08)   # zoom in: change to c(-0.05, 0.05) if you want tighter
+  ) +
+  labs(
+    title = "Density of Daily Returns by Subindustry",
+    subtitle = "Zoomed in on typical daily moves (±8%)",
+    x = "Daily Return",
+    y = ""
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
 
 ```
 
