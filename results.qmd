@@ -18,7 +18,114 @@ box_office <- read_csv("data/box_office.csv", show_col_types = FALSE)
 
 ```
 
+### Missing Value Analysis
+```{r fig.width = 9, fig.height = 4}
+library(redav)
 
+p_media   <- plot_missing(media,   num_char = 4)
+p_sectors <- plot_missing(sectors, num_char = 4)
+p_box     <- plot_missing(box_office, num_char = 4)
+
+p_media
+p_sectors
+p_box
+```
+
+
+```{r}
+library(tidyverse)
+library(scales)
+
+# sectors
+missing_summary_sectors <- sectors |>
+  summarise(across(everything(), ~ mean(is.na(.)))) |>
+  pivot_longer(everything(),
+               names_to = "variable",
+               values_to = "prop_missing")
+
+# media
+missing_summary_media <- media |>
+  summarise(across(everything(), ~ mean(is.na(.)))) |>
+  pivot_longer(everything(),
+               names_to = "variable",
+               values_to = "prop_missing")
+
+# box office
+missing_summary_box <- box_office |>
+  summarise(across(everything(), ~ mean(is.na(.)))) |>
+  pivot_longer(everything(),
+               names_to = "variable",
+               values_to = "prop_missing")
+```
+
+
+```{r}
+library(tidyverse)
+library(scales)
+
+# example: sectors data (do the same for media, box_office)
+missing_summary_sectors <- sectors |>
+  summarise(across(everything(), ~ mean(is.na(.)))) |>
+  pivot_longer(everything(),
+               names_to = "variable",
+               values_to = "prop_missing")
+
+ggplot(missing_summary_sectors,
+       aes(x = fct_reorder(variable, prop_missing),
+           y = prop_missing)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  scale_y_continuous(
+  labels = percent_format(accuracy = 0.1),
+  breaks = c(0, 0.0025, 0.005, 0.0075, 0.01)  # adjust as you like
+) +
+  labs(
+    title = "Percent of Missing Values by Variable (Sector ETFs)",
+    x = "",
+    y = "% of rows missing"
+  ) +
+  theme_minimal(base_size = 12)
+```
+
+
+```{r}
+library(ggplot2)
+library(forcats)
+library(scales)
+
+## Movie/media missingness
+ggplot(missing_summary_media,
+       aes(x = fct_reorder(variable, prop_missing),
+           y = prop_missing)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  scale_y_continuous(
+  labels = percent_format(accuracy = 0.1),
+  breaks = c(0, 0.0025, 0.005, 0.0075, 0.01)  # adjust as you like
+) +
+  labs(
+    title = "Percent of Missing Values by Variable (Movie/Media)",
+    x = "",
+    y = "% of rows missing"
+  ) +
+  theme_minimal(base_size = 12)
+```
+
+```{r}
+## Box office missingness
+ggplot(missing_summary_box,
+       aes(x = fct_reorder(variable, prop_missing),
+           y = prop_missing)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  scale_y_continuous(labels = percent_format(accuracy = 1)) +
+  labs(
+    title = "Percent of Missing Values by Variable (Box Office)",
+    x = "",
+    y = "% of rows missing"
+  ) +
+  theme_minimal(base_size = 12)
+```
 
 
 ### 1. The number of theatre releases and box office revenue still fall flat compared to pre-COVID levels 
@@ -26,7 +133,7 @@ box_office <- read_csv("data/box_office.csv", show_col_types = FALSE)
 p_box1 <- ggplot(box_office, aes(Year, Domestic_BoxOffice)) +
   geom_line(linewidth = 1) +
   geom_point(size = 2) +
-  scale_y_continuous(labels = scales::dollar) +
+  scale_y_continuous(labels = scales::dollar) + 
   labs(
     title = "U.S. Theatrical Box Office Revenue by Year",
     subtitle = "Pre-COVID peak, COVID collapse, and incomplete recovery",
@@ -399,7 +506,7 @@ ggplot(final_perf, aes(x = Sector, y = multiple, fill = is_movie)) +
     plot.margin = margin(5.5, 40, 5.5, 5.5)
   )
 ```
-
+This bar chart compares how much each major U.S. sector and the movie industry have grown since 2019 (in “× starting value” terms), highlighting that the movie industry’s cumulative performance has lagged behind most other sectors.
 
 
 ### 3. Performance of sub-industries within the movie industry differ
@@ -655,6 +762,103 @@ ggplot(sub_daily, aes(x = sub_ret, y = SubIndustry, fill = SubIndustry)) +
   theme_minimal() +
   theme(legend.position = "none")
 ```
+
+
+
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(ggalluvial)
+library(lubridate)
+library(forcats)
+
+# 1) Add regime labels -----------------------------------------------------
+media_regime <- media |>
+  mutate(
+    Date = as.Date(Date),
+    regime = case_when(
+      Date < as.Date("2020-02-20") ~ "Pre-COVID",
+      Date >= as.Date("2020-02-20") & Date <= as.Date("2021-12-31") ~ "COVID & stimulus",
+      Date >= as.Date("2022-01-01") & Date <= as.Date("2022-12-31") ~ "Rate hikes / inflation",
+      Date >= as.Date("2023-01-01") ~ "AI / recent",
+      TRUE ~ NA_character_
+    )
+  ) |>
+  filter(!is.na(regime), !is.na(return))
+
+# 2) CUMULATIVE return per Ticker × SubIndustry × Regime ------------------
+regime_perf <- media_regime |>
+  group_by(Ticker, SubIndustry, regime) |>
+  summarize(
+    cum_ret = prod(1 + return, na.rm = TRUE) - 1,  # (1+r1)*(1+r2)*... - 1
+    .groups = "drop"
+  )
+
+# 3) Bucket each ticker into Low / Mid / High within each regime ----------
+regime_buckets <- regime_perf |>
+  group_by(regime) |>
+  mutate(
+    q1 = quantile(cum_ret, 0.33, na.rm = TRUE),
+    q2 = quantile(cum_ret, 0.67, na.rm = TRUE),
+    bucket = case_when(
+      cum_ret <= q1 ~ "Low",
+      cum_ret >= q2 ~ "High",
+      TRUE          ~ "Mid"
+    )
+  ) |>
+  ungroup() |>
+  mutate(
+    bucket = factor(bucket, levels = c("Low", "Mid", "High"))
+  )
+
+# 4) Order regimes for the x-axis -----------------------------------------
+regime_levels <- c("Pre-COVID", "COVID & stimulus",
+                   "Rate hikes / inflation", "AI / recent")
+
+flow_df <- regime_buckets |>
+  filter(regime %in% regime_levels) |>
+  mutate(
+    regime = factor(regime, levels = regime_levels)
+  )
+
+# 5) Alluvial plot: ticker flows between buckets across regimes -----------
+ggplot(
+  flow_df,
+  aes(x = regime,
+      stratum = bucket,
+      alluvium = Ticker,
+      y = 1,
+      fill = SubIndustry)
+) +
+  geom_flow(stat = "alluvium",
+            lode.guidance = "forward",
+            color = "grey50",
+            alpha = 0.6) +
+  geom_stratum(color = "black") +
+  geom_text(
+    stat = "stratum",
+    aes(label = after_stat(stratum)),
+    size = 3,
+    color = "black"
+  ) +
+  scale_y_continuous(expand = c(0, 0)) +
+  labs(
+    title = "How Movie/Media Stocks Move Across Performance Buckets Over Time",
+    subtitle = "Each stream is a ticker; Low / Mid / High based on cumulative return in each regime",
+    x = "Regime",
+    y = "Number of tickers",
+    fill = "Subindustry"
+  ) +
+  theme_minimal()
+```
+
+
+
+
+
+
+
 
 ### 4. Netflix behaves like a tech company & AMC theatre underperforms 
 ```{r}

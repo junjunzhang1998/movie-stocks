@@ -17,5 +17,11 @@ things to work on 12/7/25:
   - compare netflix revenue to other companies? 
 
 ## Missing value analysis
+The movie/media prices dataset has almost complete data. The only thing missing is the extra features created, and only about 2% of rows are missing vol_21d, and a smaller share (around 0.2%) is missing return. For the columns with missing values, such as the Volume or Close, the missingness plot shows that these mostly show up together. This implies that for a handful of dates, the whole price record is absent. 
+
+For the sector ETF data, the story is very similar. All of the core price and identifier columns are complete, and the only missing values show up in vol_21d and a few return entries. So during the analysis and graphing, it’s reasonable to either drop these rows.
+
+For the box-office table, there are no missing values at all.
+
 
 
