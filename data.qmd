@@ -25,6 +25,7 @@ As for the fourth dataset from AMC’s “U.S. Markets – Theatres & Screens”
 library(tidyverse)
 library(readxl)
 library(redav)
+library(scales)
 library(patchwork)   
 
 # --- Load data ---
@@ -128,7 +129,7 @@ ggplot(missing_summary_media,
   coord_flip() +
   scale_y_continuous(
   labels = percent_format(accuracy = 0.1),
-  breaks = c(0, 0.0025, 0.005, 0.0075, 0.01)  # adjust as you like
+  breaks = c(0, 0.0025, 0.005, 0.0075, 0.01)  
 ) +
   labs(
     title = "Percent of Missing Values by Variable (Movie/Media)",
