@@ -46,7 +46,7 @@ ggplot(box_office, aes(x = Year, y = Domestic_BoxOffice)) +
   )
 ```
 
-In 2020, box office revenue plunged from about 11B to just over 2B. Although it has climbed back to around \$8B, it did not return to its old peak and instead settled into a lower range than before the pandemic, which imply that movie industry may now be structurally smaller compared to pre-pandemic.
+In 2020, box office revenue plunged from about \$11B to just over \$2B. Although it has climbed back to around \$8B, it did not return to its old peak and instead settled into a lower range than before the pandemic, which imply that movie industry may now be structurally smaller compared to pre-pandemic.
 
 ### Chart 2. Number of Theatrical Releases per Year
 
