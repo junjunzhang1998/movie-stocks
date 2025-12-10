@@ -18,12 +18,6 @@ For the sector ETF data, the story is very similar. All of the core price and id
 For the box-office table, there are no missing values at all.
 
 
-### Missing Value Analysis
-
-Describe any patterns you discover in missing values. If no values are missing, graphs should still be included showing that.
-
-(suggested: 2 graphs plus commentary)
-
 ```{r fig.width = 9, fig.height = 4}
 #load the three datasets and tidyverse package
 library(tidyverse)
