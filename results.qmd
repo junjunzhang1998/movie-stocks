@@ -168,6 +168,10 @@ library(scales)
 # Symmetric limits around zero for the diverging scale
 lim <- max(abs(map_data$theatres_pct_change), na.rm = TRUE)
 
+library(scales)
+
+lim <- max(abs(map_data$theatres_pct_change), na.rm = TRUE)
+
 ggplot(map_data) +
   geom_sf(
     aes(fill = theatres_pct_change),
@@ -183,26 +187,38 @@ ggplot(map_data) +
     name     = "Percent change\nin theatres",
     labels   = percent_format(accuracy = 1),
     limits   = c(-lim, lim),
-    low      = "#b2182b",   # big declines
-    mid      = "#f0f0f0",   # 0% change -> light grey (visible)
-    high     = "#2166ac",   # growth
+    low      = "#b2182b",
+    mid      = "#f0f0f0",
+    high     = "#2166ac",
     midpoint = 0,
-    na.value = "grey50"     # no AMC data
+    na.value = "grey50"
   ) +
   labs(
     title    = "Percent change in AMC Theatres by State (2019–2024)",
     subtitle = "(Light grey = no change; dark grey = no AMC theatres)",
     caption  = "Source: AMC U.S. Markets Theatres & Screens tables, 2019 vs 2024"
   ) +
- theme_minimal(base_size = 14) +
+  theme_minimal(base_size = 14) +
   theme(
     panel.grid        = element_blank(),
     axis.title        = element_blank(),
     plot.title.position = "plot",
-    plot.title        = element_text(margin = margin(b = 6)),
-    plot.subtitle     = element_text(margin = margin(b = 10)),
-    plot.margin       = margin(t = 10, r = 15, b = 10, l = 10)
+    plot.title        = element_text(
+      hjust = 0,               
+      margin = margin(b = 10)  
+    ),
+    plot.subtitle     = element_text(
+      hjust = 0,
+      margin = margin(b = 18) 
+    ),
+    plot.margin       = margin(
+      t = 25,   
+      r = 15,
+      b = 15,
+      l = 15
+    )
   )
+
 state_changes |>
   arrange(theatres_pct_change) |>
   select(state, theatres_pct_change) |>
@@ -213,8 +229,7 @@ state_changes |>
   select(state, theatres_pct_change) |>
   head(5)   # largest increases
 ```
-
-Across most of the country, AMC has closed more theatres than it opened between 2019 and 2024 (red states on the map). The biggest cuts are in Nebraska, North Dakota, Kentucky, South Carolina, and South Dakota, where AMC lost two-thirds or more of its theatres. Only a few states show growth, such as Connecticut, Massachusetts, Maryland, California, and New York, and many grey states have no available data at all in either year. Together, this means that AMC's business scope is shrinking a lot.
+Across most of the country, AMC has closed more theatres than it opened between 2019 and 2024 (red states on the map). The biggest cuts are in Delaware, New Hampshire, Wyoming, Nebraska, and North Dakota, where AMC lost two-thirds or more of its theatres. Only a few states show growth, such as Connecticut, Massachusetts, Maryland, California, and New York, and many light grey states have no no changes. Together, this means that AMC's business scope is shrinking a lot.
 
 ## 2. While most U.S. sectors recovered strongly post-COVID, the movie industry lags behind
 
