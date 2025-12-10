@@ -3,7 +3,7 @@ We look at how the movie industry is performing from three perspectives and foun
 
 - Moviegoing pattern has shifted since the pandemic. Box office revenues, number of releases, and number of theatres in the U.S. all remain below pre-COVID levels. 
 
-- Compared with major market sectors, the movie industry’s recovery has been less consistent. It performed well from late 2020 through 2022, but after 2022 the movie industry's stock price plunges and still falls behind most other sectors to this date.
+- Compared with major market sectors, the movie industry’s recovery is much slower It performed well from late 2020 through 2022, but after 2022 the movie industry's stock price dropped a lot and still falls behind most other sectors to this date.
 
 - Performance of sub-industries within the movie industry differ. Theater sub-industry is the most volatile. 
 
@@ -61,7 +61,7 @@ ggplot(box_office, aes(x = Year, y = Domestic_BoxOffice)) +
     panel.grid.minor = element_blank()
   )
 ```
-In 2020, box office revenue plunged from about $11B to just over $2B. Although it has rebounded to roughly $8B, it still hasn’t returned to its pre-pandemic peak and instead seems to be leveled off at a lower range, suggesting that the movie industry may now be structurally smaller than it was before COVID.
+In 2020, box office revenue plunged from about $11B to just over $2B. Although it has returned to roughly $8B, it still hasn’t reached the old peak and now seems to be stuck at a lower level, which suggests that the movie industry may now be structurally smaller than it was before COVID.
 
 ### Chart 2. Number of Theatrical Releases per Year
 
@@ -89,7 +89,7 @@ ggplot(box_office, aes(Year, Releases)) +
 
 ```
 
-Similar to Chart 1, the number of theatrical releases dropped sharply in 2020 and remained below pre-pandemic levels. This indicates that studios have reduced their annual output, releasing fewer films than before—likely reflecting shifts in production and distribution strategies.
+Similar to Chart 1, the number of theatrical releases dropped sharply in 2020 and remained below pre-pandemic levels. This indicates that studios have reduced their annual output and released fewer films than before. And this will likely reflect shifts in production and distribution strategies, where companies might focus more on streaming services. 
 
 ### Chart 3. Percent Change in AMC Theatres by State (2019 vs 2024)
 
@@ -342,7 +342,7 @@ ggplot() +
   )
 
 ```
-In this chart, the movie industry index is constructed by taking a simple average of each company’s stock price after rebasing them to 1 at the start date. From 2019 to 2025, technology stocks show the strongest overall growth, while energy is the most volatile. The movie industry did well during the late-2020 to 2022 period, but after 2022 it falls behind most other sectors. This pattern suggests that the movie industry’s recovery is weaker and less consistent than the broader market.
+In this chart, the movie industry index is calculated by taking a simple average of each company’s stock price after rebasing them to 1 at the start date. From 2019 to 2025, technology stocks show the strongest overall growth, while energy is the most volatile. The movie industry did well during the late-2020 to 2022 period, but after 2022 it falls behind most other sectors. This pattern suggests that the movie industry’s recovery is weaker and less consistent than the broader market.
 
 ### Chart 5. Stock Price Performance of Movie Companies From 2019–2025
 
@@ -432,7 +432,7 @@ ggplot() +
 
 ```
 
-This chart shows that two companies drove much of the volatility in the movie industry, helping explain the sector’s brief strength from late 2020 to 2022 (see chart 4). For example, Roku’s share price rose sharply in 2020, corresponding to higher streaming usage during stay-at-home period. AMC experienced large price swings in early 2021. This was due to the “meme-stock” trading frenzy driven by movements from the reddit group wallstreetbets. These movements stood out from the rest of the movie industry. However, in 2022, both ROKU and AMC stocks trended downward- revealing these were temporary movements rather than lasting increase.
+This chart shows that two companies drove much of the volatility in the movie industry. This helps explain the sector’s brief strength from late 2020 to 2022 (see chart 4). For example, Roku’s share price rose sharply in 2020, corresponding to higher streaming usage during Covid. AMC experienced large price swings in early 2021. This was due to the “meme-stock” trading frenzy driven by movements from the reddit group wallstreetbets. These movements stood out from the rest of the movie industry. However, in 2022, both ROKU and AMC stocks trended downward, which reveals these were temporary movements rather than lasting increase.
 
 ### Chart 6. Sector Cumulative Performance Since 2019
 
