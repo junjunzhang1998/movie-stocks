@@ -1,4 +1,4 @@
-# Stocks – Final Project for EDAV (Fall 2025)
+# Movie Stocks – Final Project for EDAV (Fall 2025)
 
 This repo contains my EDAV final project, which explores how COVID-19 and recent market shifts (including the AI boom) affected the **movie/media industry**. I look at U.S. theatrical box office revenue and releases, AMC’s theatre footprint by state (2019 vs 2024), and stock performance of movie/media companies compared with major sector ETFs. The project is implemented as a **Quarto book** and styled with the **Litera** Bootswatch theme.
 
