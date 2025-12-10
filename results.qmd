@@ -561,7 +561,7 @@ ggplot(sub_avg, aes(Date, rebased_avg)) +
 
 Theater companies and streamer companies exhibit the most volatility. Theater companies experienced a steep drop in stock price in 2020 followed by an uneven recovery. Streamers rise sharply through 2020–2021 before dropping significantly in 2022. Diversified media firms trend more steadily upward, while studios show a mild, gradual decline.
 
-### Chart 8. Correlation Between Movie Sub-Industries (2015–2025)
+### Chart 8. Correlation Between Movie Sub-Industries (2019–2025)
 
 ```{r}
 # --- Rebase, build subindustry index, make wide matrix ---
@@ -612,7 +612,7 @@ ggplot(cor_long, aes(Var1, Var2, fill = Correlation)) +
   ) +
   coord_fixed() +
   labs(
-    title = "Correlation Between Movie Sub-Industries (2015–2025)",
+    title = "Correlation Between Movie Sub-Industries (2019– 2025)",
     subtitle = "Diverging color scale centered at zero highlights negative vs. positive relationships",
     x = NULL, y = NULL
   ) +
